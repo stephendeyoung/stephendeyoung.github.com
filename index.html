@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Scheem</title>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap.no-responsive.no-icons.min.css" rel="stylesheet">
+    <link href="codemirror.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Scheem Interpreter</h1>
+      </div>
+      <div class="row">
+        <div class="span6">
+          <textarea id="scheem-editor"></textarea>
+          <div id="results" class="alert">
+            The result of your code will appear here.
+          </div>
+          <div id="ast" class="alert alert-info">
+            The abstract syntax tree will appear here.
+          </div>
+        </div>
+        <div class="span6">
+          <div class="well">
+            <div id="instructions">
+              <p>Scheem is a very basic implementation of the <a href="http://en.wikipedia.org/wiki/Scheme_(programming_language)">Scheme</a> programming language in Javascript.</p>
+              <p>Use the editor on the left to write Scheem code. Here are some examples:</p>
+              <ul>
+                <li><a href="#" class="example-link" rel="addition-example">Basic arithmetic</a></li>
+                <li><a href="#" class="example-link" rel="maths-example">Slightly more complex arithmetic</a></li>
+                <li><a href="#" class="example-link" rel="vars-example">Declaring variables</a></li>
+                <li><a href="#" class="example-link" rel="branching-example">Using <code>if/else</code></a></li>
+                <li><a href="#" class="example-link" rel="let-example">Scoping with <code>let</code>
+                  <li><a href="#" class="example-link" rel="lambda-example">Creating functions with <code>lambda</code></a></li>
+                  <li><a href="#" class="example-link" rel="factorial-example">Factorial</li>
+              </ul>
+              <p><a href="#" class="btn">View the full source code</a></p>
+              <p><a href="#" class="btn">View the unit tests</a></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="codemirror.js"></script>
+    <script src="parser.js"></script>
+    <script src="scheem.js"></script>
+    <script>
+      $(document).on('ready', function() {
+
+        var evaluateCode = function evaluateCode(editor) {
+          var code = editor.getValue();
+          try {
+            var parsed = SCHEEM.parse(code);
+            $('#ast').text('AST: ' + JSON.stringify(parsed));
+            try {
+                var result = evalScheem(parsed, {});
+                $('#results').addClass('alert-success').removeClass('alert-error').html(result);
+            }
+            catch(e) {
+              $('#results').addClass('alert-error').removeClass('alert-success').html(e.message);
+              window.lastError = e;
+            }
+          }
+          catch(e) {
+            $('#results').addClass('alert-error').removeClass('alert-success').html(e.message);
+            window.lastError = e;
+          }
+        };
+
+
+        var editor = CodeMirror.fromTextArea(document.getElementById('scheem-editor'), {
+          mode: "scheme",
+          theme: "elegant",
+          lineNumbers: true,
+          matchBrackets: true,
+          autofocus: true,
+          lineWrapping: true,
+          tabSize: 1,
+          onChange: evaluateCode
+        });
+
+        var addToEditor = function(code) {
+          editor.setValue(code);
+          editor.focus();
+          var lineCount = editor.lineCount();
+          for (var i = 0; i < lineCount; i++) {
+            editor.indentLine(i);
+          }
+        };
+
+        $('.example-link').on('click', function (e) {
+          e.preventDefault();
+          var code = $("#" + $(this).prop('rel')).text().replace(/^\s*|\s*$/, "");
+          addToEditor(code);
+        });
+      });
+    </script>
+    <script type="text/scheem" id="addition-example">
+;; Scheem uses Lisp-style syntax (lots of parentheses!)
+(+ 3 4)
+    </script>
+    <script type="text/scheem" id="maths-example">
+;; We can give arithmetic functions more than two arguments. Since Scheem uses prefix notation we don't have to worry about order of precedence.
+(/ (* 4 5 21)
+   (+ 11 3)
+   (- (+ 1 1) 4))
+    </script>
+    <script type="text/scheem" id="vars-example">
+;; Scheem can only support one expression so we have to use begin to execute a series of commands.
+(begin
+;; define declares a variable.
+  (define a 12)
+  (define b (* a 2))
+  ;; We can use set! to change the value of an existing variable.
+  (set! a 8)
+  (/ b a))
+    </script>
+    <script type="text/scheem" id="branching-example">
+;; In Scheem the if method takes a condition. If the condition is true it executes the second argument otherwise it calls the third.
+(if (= 2 1)
+    (* 6 4)
+    (if (= 2 2)
+        (* 10 5)
+        (/ 6 3)))
+    </script>
+<script type="text/scheem" id="let-example">
+;; We can create a new scope with let. This allows us to define variables that are only accessible within that scope.
+(let ((x 1)
+(y 2))
+  (= 3 (+ x y)))
+    </script>
+<script type="text/scheem" id="lambda-example">
+      ;; In Scheem functions can be declared with lambda.
+      (begin
+        (define square (lambda (x) (* x x)))
+        (square 4))
+    </script>
+<script type="text/scheem" id="factorial-example">
+(begin
+    (define factorial
+        (lambda (n)
+            (if (= n 0)
+                1
+                (* n (factorial (- n 1))))))
+
+(factorial 6))
+    </script>
+  </body>
+</html>
