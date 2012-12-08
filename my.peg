@@ -1,0 +1,38 @@
+start = expression
+
+expression = open
+
+validchar
+    = [a-zA-Z_?!+\-=@#$%^&*/<>.]
+
+validnumber = [0-9]
+
+validfuncchars = [a-zA-Z_]
+
+validformatting =
+[\n\t ]*
+
+
+comment = ";;" [^\n]* [\n]* open: open? {return open;}
+
+atom =
+chars:validfuncchars+ _number: validnumber+ { var array = chars.concat(_number); return array.join(""); } // takes account of numbers being used as part of function names
+/  chars:validchar+  {return chars.join(""); }
+/ numbers: validnumber+ {return parseInt(numbers.join(""))}
+
+spacedatoms = 
+  spaces: [\n ]* atoms: atom {return atoms;}
+/ start: [\n ]* open: open {return open;}
+
+regular = 
+start: validformatting "(" spaced: spacedatoms* end: ")" validformatting
+{ return spaced;}
+
+quote = start: "'" atoms: spacedatoms
+{var quote = ["quote"]; quote.push(atoms); return quote; }
+
+open = 
+comment
+/  atom 
+/ regular
+/ quote
